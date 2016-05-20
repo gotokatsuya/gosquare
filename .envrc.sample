@@ -1,0 +1,5 @@
+# vim:set ts=8 sts=2 sw=2 tw=0:
+# vim:set ft=sh:
+
+export FOURSQUARE_CLIENT_ID=""
+export FOURSQUARE_CLIENT_SECRET=""

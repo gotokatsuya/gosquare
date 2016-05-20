@@ -1,72 +1,78 @@
 package dispatcher
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
+
+	"github.com/gotokatsuya/gosquare/util"
 )
 
 type Client struct {
-	clientID     string
-	clientSecret string
-	v            string
-	apiBaseURL   string
-	locale       string
-	HTTPClient   *http.Client
+	ID         string
+	Secret     string
+	Version    string
+	APIBaseURL string
+	APIVersion string
+	Locale     string
+	HTTPClient *http.Client
 }
 
 const (
-	defaultVersion    = "20160520"
-	defaultApiBaseURL = "https://api.foursquare.com/v2/"
+	defaultVersion    = "20140715"
+	defaultAPIBaseURL = "https://api.foursquare.com"
+	defaultAPIVersion = "v2"
 	defaultLocale     = "en"
 )
 
-func NewClient(clientID, clientSecret string) Client {
+func NewClient() Client {
 	return Client{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		v:            defaultVersion,
-		apiBaseURL:   defaultApiBaseURL,
-		locale:       defaultLocale,
-		HTTPClient:   http.DefaultClient,
+		ID:         util.GetClientID(),
+		Secret:     util.GetClientSecret(),
+		Version:    defaultVersion,
+		APIBaseURL: defaultAPIBaseURL,
+		APIVersion: defaultAPIVersion,
+		Locale:     defaultLocale,
+		HTTPClient: http.DefaultClient,
 	}
 }
 
-func (c *Client) SetVersion(v string) {
-	c.v = v
-}
-
-func (c *Client) SetAPIBaseURL(apiBaseURL string) {
-	c.apiBaseURL = apiBaseURL
-}
-
-func (c *Client) SetLocale(locale string) {
-	c.locale = locale
-}
-
-func (c *Client) SetHTTPClient(httpClient *http.Client) {
-	c.HTTPClient = httpClient
+func NewClientWithParam(clientID, clientSecret string) Client {
+	return Client{
+		ID:         clientID,
+		Secret:     clientSecret,
+		Version:    defaultVersion,
+		APIBaseURL: defaultAPIBaseURL,
+		APIVersion: defaultAPIVersion,
+		Locale:     defaultLocale,
+		HTTPClient: http.DefaultClient,
+	}
 }
 
 func (c *Client) DispatchGetRequest(endpoint string, params map[string]string) ([]byte, error) {
-	var reqURL bytes.Buffer
-	reqURL.WriteString(c.apiBaseURL + endpoint)
+	u, err := url.Parse(c.APIBaseURL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(c.APIVersion, endpoint)
+	urlString := u.String()
+
 	values := url.Values{}
 	for k, v := range params {
 		values.Set(k, v)
 	}
-	values.Set("client_id", c.clientID)
-	values.Set("client_secret", c.clientSecret)
-	values.Set("v", c.v)
-	reqURL.WriteString(values.Encode())
+	values.Set("client_id", c.ID)
+	values.Set("client_secret", c.Secret)
+	values.Set("v", c.Version)
 
-	req, err := http.NewRequest("GET", reqURL.String(), nil)
+	req, err := http.NewRequest("GET", urlString+"?"+values.Encode(), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept-Language", c.locale)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept-Language", c.Locale)
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -76,8 +82,8 @@ func (c *Client) DispatchGetRequest(endpoint string, params map[string]string) (
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode >= http.StatusOK && resp.StatusCode <= http.StatusBadRequest {
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusBadRequest {
 		return body, nil
 	}
-	return nil, fmt.Errorf("client.getRequest: code:%d body:%s", resp.StatusCode, body)
+	return nil, fmt.Errorf("Dispatcher.Client.DispatchGetRequest: code:%d body:%s", resp.StatusCode, body)
 }

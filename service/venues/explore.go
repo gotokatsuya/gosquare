@@ -12,13 +12,12 @@ type ExploreRequest struct {
 	Near   string `json:"near"`
 }
 
-func NewExploreRequest(ll string) ExploreRequest {
-	return ExploreRequest{
-		LatLng: ll,
-	}
+func NewExploreRequest() ExploreRequest {
+	return ExploreRequest{}
 }
 
 func (req *ExploreRequest) getParams() (params map[string]string) {
+	params = make(map[string]string)
 	if len(req.LatLng) != 0 {
 		params["ll"] = req.LatLng
 	}
@@ -54,7 +53,7 @@ type exploreItem struct {
 }
 
 func Explore(client dispatcher.Client, req ExploreRequest) (*ExploreResponse, error) {
-	body, err := client.DispatchGetRequest("venues/explore?", req.getParams())
+	body, err := client.DispatchGetRequest("venues/explore", req.getParams())
 	if err != nil {
 		return nil, err
 	}
