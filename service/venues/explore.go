@@ -8,27 +8,47 @@ import (
 )
 
 type ExploreRequest struct {
-	LatLng string `json:"ll"`
-	Near   string `json:"near"`
+	LatLng         string `json:"ll,omitempty"`
+	Near           string `json:"near,omitempty"`
+	LatLngAcc      string `json:"llAcc,omitempty"`
+	Alt            string `json:"alt,omitempty"`
+	AltAcc         string `json:"altAcc,omitempty"`
+	Radius         string `json:"radius,omitempty"`
+	Section        string `json:"section,omitempty"`
+	Query          string `json:"query,omitempty"`
+	Limit          string `json:"limit,omitempty"`
+	Offset         string `json:"offser,omitempty"`
+	Novelty        string `json:"novelty,omitempty"`
+	FriendVisits   string `json:"friendVisits,omitempty"`
+	Time           string `json:"time,omitempty"`
+	Day            string `json:"day,omitempty"`
+	VenuePhotos    string `json:"venuePhotos,omitempty"`
+	LastVenue      string `json:"lastVenue,omitempty"`
+	OpenNow        string `json:"openNow,omitempty"`
+	SortByDistance string `json:"sortByDistance,omitempty"`
+	Price          string `json:"price,omitempty"`
+	Saved          string `json:"saved,omitempty"`
+	Specials       string `json:"specials,omitempty"`
 }
 
 func NewExploreRequest() ExploreRequest {
 	return ExploreRequest{}
 }
 
-func (req *ExploreRequest) getParams() (params map[string]string) {
-	params = make(map[string]string)
-	if len(req.LatLng) != 0 {
-		params["ll"] = req.LatLng
+func (req *ExploreRequest) getParams() (map[string]string, error) {
+	params := make(map[string]string)
+	b, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
 	}
-	if len(req.Near) != 0 {
-		params["near"] = req.Near
+	if err := json.Unmarshal(b, &params); err != nil {
+		return nil, err
 	}
-	return params
+	return params, nil
 }
 
 type ExploreResponse struct {
-	Response exploreBody `json:"response"`
+	Response exploreResponseBody `json:"response"`
 }
 
 func (resp *ExploreResponse) GetVenues() (venues []model.Venue) {
@@ -40,20 +60,24 @@ func (resp *ExploreResponse) GetVenues() (venues []model.Venue) {
 	return venues
 }
 
-type exploreBody struct {
-	Groups []exploreGroup `json:"groups"`
+type exploreResponseBody struct {
+	Groups []exploreResponseGroup `json:"groups"`
 }
 
-type exploreGroup struct {
-	Items []exploreItem `json:"items"`
+type exploreResponseGroup struct {
+	Items []exploreResponseItem `json:"items"`
 }
 
-type exploreItem struct {
+type exploreResponseItem struct {
 	Venue model.Venue `json:"venue"`
 }
 
 func Explore(client dispatcher.Client, req ExploreRequest) (*ExploreResponse, error) {
-	body, err := client.DispatchGetRequest("venues/explore", req.getParams())
+	params, err := req.getParams()
+	if err != nil {
+		return nil, err
+	}
+	body, err := client.DispatchGetRequest("venues/explore", params)
 	if err != nil {
 		return nil, err
 	}

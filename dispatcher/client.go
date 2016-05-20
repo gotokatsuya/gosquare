@@ -13,42 +13,54 @@ import (
 type Client struct {
 	ID         string
 	Secret     string
+	OAuthToken string
 	Version    string
 	APIBaseURL string
 	APIVersion string
 	Locale     string
+	Mode       string
 	HTTPClient *http.Client
 }
 
 const (
-	defaultVersion    = "20140715"
+	FoursquareMode = "foursquare"
+	SwarmMode      = "swarm"
+)
+
+const (
+	defaultVersion    = "20160520"
 	defaultAPIBaseURL = "https://api.foursquare.com"
 	defaultAPIVersion = "v2"
 	defaultLocale     = "en"
+	defaultMode       = FoursquareMode
 )
 
-func NewClient() Client {
+func newDefaultClient() Client {
 	return Client{
-		ID:         util.GetClientID(),
-		Secret:     util.GetClientSecret(),
 		Version:    defaultVersion,
 		APIBaseURL: defaultAPIBaseURL,
 		APIVersion: defaultAPIVersion,
 		Locale:     defaultLocale,
+		Mode:       defaultMode,
 		HTTPClient: http.DefaultClient,
 	}
 }
 
+func NewClient() Client {
+	return NewClientWithParam(util.GetClientID(), util.GetClientSecret())
+}
+
 func NewClientWithParam(clientID, clientSecret string) Client {
-	return Client{
-		ID:         clientID,
-		Secret:     clientSecret,
-		Version:    defaultVersion,
-		APIBaseURL: defaultAPIBaseURL,
-		APIVersion: defaultAPIVersion,
-		Locale:     defaultLocale,
-		HTTPClient: http.DefaultClient,
-	}
+	client := newDefaultClient()
+	client.ID = clientID
+	client.Secret = clientSecret
+	return client
+}
+
+func NewClientWithToken(token string) Client {
+	client := newDefaultClient()
+	client.OAuthToken = token
+	return client
 }
 
 func (c *Client) DispatchGetRequest(endpoint string, params map[string]string) ([]byte, error) {
@@ -63,9 +75,15 @@ func (c *Client) DispatchGetRequest(endpoint string, params map[string]string) (
 	for k, v := range params {
 		values.Set(k, v)
 	}
-	values.Set("client_id", c.ID)
-	values.Set("client_secret", c.Secret)
+	switch {
+	case len(c.OAuthToken) != 0:
+		values.Set("oauth_token", c.OAuthToken)
+	default:
+		values.Set("client_id", c.ID)
+		values.Set("client_secret", c.Secret)
+	}
 	values.Set("v", c.Version)
+	values.Set("m", c.Mode)
 
 	req, err := http.NewRequest("GET", urlString+"?"+values.Encode(), nil)
 	if err != nil {

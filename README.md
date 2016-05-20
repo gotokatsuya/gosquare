@@ -1,7 +1,9 @@
 # gosquare
-
+  
 Foursquare API client library for Go.
-
+  
+https://developer.foursquare.com/docs/
+  
 ## Installation
 
 ```bash
@@ -16,7 +18,9 @@ export FOURSQUARE_CLIENT_SECRET=""
 ```
 
 ### Use Service (Recommend)
-
+  
+Service is useful that uses request and response entities are defined.
+  
 ```go
 
 import (
@@ -41,7 +45,7 @@ func VenuesExplore() error {
 }
 ```
 
-### Use Client
+### Use Dispatcher
 
 ```go
 
@@ -65,7 +69,9 @@ func VenuesSearch() error {
 		return err
 	}
 	var data interface{}
-	json.Unmarshal(res, &data)
+	if err := json.Unmarshal(res, &data); err != nil {
+		return err
+	}
     fmt.Println(data)
     return nil
 }
