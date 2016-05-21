@@ -22,7 +22,6 @@ type Venue struct {
 	HereNow      HereNow      `json:"hereNow"`
 	Tags         []string     `json:"tags"`
 	Photos       Photos       `json:"photos"`
-	BestPhoto    PhotoItem    `json:"bestPhoto"`
 	Reasons      Reasons      `json:"reasons"`
 	Tips         Tips         `json:"tips"`
 	Popular      Popular      `json:"popular"`
@@ -91,10 +90,10 @@ type Photos struct {
 }
 
 type PhotosGroups struct {
-	Items []PhotoItem `json:"items"`
+	Items []Photo `json:"items"`
 }
 
-type PhotoItem struct {
+type Photo struct {
 	ID         string      `json:"id"`
 	Name       string      `json:"name"`
 	Source     PhotoSource `json:"source"`
